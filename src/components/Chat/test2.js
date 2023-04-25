@@ -8,22 +8,10 @@ import { RiSendPlaneFill } from "react-icons/ri";
 import ScrollBarFeed from "react-scrollable-feed";
 
 const Chat = () => {
-    const [inputText, setInputText] = useState("");
-    const [message, setMessage] = useState([]);
-    const [chatLog, setChatLog] = useState([]);
-    const [currentTitle, setCurrentTitle] = useState(null);
-
-    const handleNewConversationClick = () => {
-        setMessage([]);
-        setInputText("");
-        setCurrentTitle(null);
-    };
-
-    const handleHistoryClick = (title) => {
-        setCurrentTitle(title);
-        setMessage([]);
-        setInputText("");
-    };
+    const [value, setValue] = useState("");
+    const [message, setMessage] = useState(null);
+    const [previousChat, setPreviousChat] = useState([]);
+    const [currentTittle, setCurrentTittle] = useState(null);
 
     const handleKeyDown = (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
@@ -33,13 +21,24 @@ const Chat = () => {
         }
     };
 
+    const createNewChat = () => {
+        setMessage(null);
+        setValue("");
+        setCurrentTittle(null);
+    };
+
+    const handleClick = (tittle) => {
+        setCurrentTittle(tittle);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setValue("");
 
         const options = {
             method: "POST",
             body: JSON.stringify({
-                message: inputText,
+                message: value,
             }),
             headers: {
                 "Content-Type": "application/json",
@@ -57,63 +56,55 @@ const Chat = () => {
     };
 
     useEffect(() => {
-        console.log(currentTitle, inputText, message);
-
-        if (!currentTitle && inputText && message) {
-            setCurrentTitle(inputText);
+        // console.log(message, currentTittle, value);
+        if (!currentTittle && value && message) {
+            setCurrentTittle(value);
         }
-        if (currentTitle && inputText && message) {
-            setChatLog((prevChatLog) => [
-                ...prevChatLog,
+        if (currentTittle && value && message) {
+            setPreviousChat((prevChat) => [
+                ...prevChat,
 
                 {
-                    title: currentTitle,
+                    title: currentTittle,
                     role: "me",
-                    content: inputText,
+                    content: value,
                 },
 
                 {
-                    title: currentTitle,
                     role: "gpt",
+                    title: currentTittle,
                     content: message.content,
                 },
             ]);
         }
-    }, [message, currentTitle]);
+    }, [message, currentTittle, value]);
+    // console.log(previousChat);
 
-    console.log(chatLog);
-    // console.log(inputText);
+    const currentChat = previousChat.filter(
+        (previousChat) => previousChat.title === currentTittle
+    );
 
-    const currentChat = chatLog.filter((chat) => chat.title === currentTitle);
+    const uniqueTittle = Array.from(
+        new Set(previousChat.map((prevChat) => prevChat.title))
+    );
 
-    const uniqueTitle = Array.from(new Set(chatLog.map((chat) => chat.title)));
-
-    console.log(uniqueTitle);
     return (
         <section className="main-chat-section">
             <div className="chat-aside-section">
                 <div className="aside-logo-text">
                     <img src={logo} alt="logo" />
                 </div>
-                <div
-                    className="aside-new-conversation"
-                    onClick={handleNewConversationClick}
-                >
+                <div onClick={createNewChat} className="aside-new-conversation">
                     <MdAddComment size={"20px"} />
                     <p>New Conversation</p>
                 </div>
                 <ul className="history">
-                    <ScrollBarFeed>
-                        {uniqueTitle?.map((title, i) => (
-                            <li
-                                key={i}
-                                onClick={() => handleHistoryClick(title)}
-                            >
-                                <CiChat1 size={"22px"} />
-                                <p>{title}</p>
-                            </li>
-                        ))}
-                    </ScrollBarFeed>
+                    {uniqueTittle?.map((tittle, i) => (
+                        <li key={i} onClick={() => handleClick(tittle)}>
+                            <CiChat1 size={"22px"} />
+                            <p>{tittle}</p>
+                        </li>
+                    ))}
                 </ul>
             </div>
 
@@ -127,32 +118,21 @@ const Chat = () => {
 
             <div className="chat-box-section">
                 <div className="chat-box-heading">
-                    {!currentTitle ? (
+                    {!currentTittle ? (
                         <h1>Conv Ttile</h1>
                     ) : (
-                        <h1>{currentTitle}</h1>
+                        <h1>{currentTittle}</h1>
                     )}
                 </div>
                 <div className="chat-box-chat-log">
-                    <ScrollBarFeed>
-                        {currentChat?.map((chatMessage, i) => (
-                            <ChatMessage key={i} chatMessage={chatMessage} />
-
-                            // <li key={i}>
-                            //     <p className="role">{chatMessage.role}</p>
-                            //     <p>{chatMessage.content}</p>
-                            // </li>
-                        ))}
-                    </ScrollBarFeed>
-
                     {/* <ScrollBarFeed> */}
-                    {/* {currentChat?.map((chatMessage, i) => (
+                    {currentChat?.map((chatMessage, i) => (
                         // <ChatMessage key={i} chatMessage={chatMessage} />
                         <li key={i}>
                             <p className="role">{chatMessage.role}</p>
                             <p>{chatMessage.content}</p>
                         </li>
-                    ))} */}
+                    ))}
                     {/* </ScrollBarFeed> */}
                 </div>
 
@@ -160,10 +140,10 @@ const Chat = () => {
                     <div className="chat-box-input-textarea">
                         <form onSubmit={handleSubmit}>
                             <textarea
-                                value={inputText}
-                                onChange={(e) => setInputText(e.target.value)}
+                                value={value}
+                                onChange={(e) => setValue(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                rows={2}
+                                rows={1}
                                 placeholder="Enter your message here"
                             />
                             <button type="submit">
